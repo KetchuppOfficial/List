@@ -1,21 +1,17 @@
-CC = g++
+CC = gcc
 
 CFLAGS = -c -Wall -Wextra -Werror
 
-List: main.o List.o Reading_File.o Log_File.o
-	$(CC) main.o List.o Reading_File.o Log_File.o -o List.out
+MY_LIB = ../My_Lib/My_Lib.a
 
-main.o: main.cpp
-	$(CC) $(CFLAGS) main.cpp -o main.o
+List: main.o List.o
+	$(CC) main.o List.o $(MY_LIB) -o List.out
 
-List.o: List.cpp
-	$(CC) $(CFLAGS) List.cpp -o List.o
+main.o: main.c
+	$(CC) $(CFLAGS) main.c -o main.o
 
-Reading_File.o: Reading_File.cpp
-	$(CC) $(CFLAGS) Reading_File.cpp -o Reading_File.o
-
-Log_File.o: Log_File.cpp
-	$(CC) $(CFLAGS) Log_File.cpp -o Log_File.o
+List.o: List.c
+	$(CC) $(CFLAGS) List.c -o List.o
 
 run:
 	./List.out

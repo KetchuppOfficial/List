@@ -1,5 +1,5 @@
 #include "List.h"
-#include "Log_File.h"
+#include "../My_Lib/My_Lib.h"
 
 int main (void)
 {
@@ -21,10 +21,10 @@ int main (void)
         return ERROR;
     }
 
-    int n = 0;
+    int n = 4;
     printf ("logical: %d, physical: %d\n", n, Logical_Num_To_Physical (list, n));
 
-    //List_Linearisation (&list);
+    List_Linearisation (&list);
 
     List_Dump (list);
 

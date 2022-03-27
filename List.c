@@ -1,8 +1,11 @@
 #include "List.h"
-#include "Reading_File.h"
-#include "Log_File.h"
+#include "../My_Lib/My_Lib.h"
 
 const char *GRAPH_FILE = "Graph.dot";
+
+const ssize_t MIN_CAPACITY =  8;
+const ssize_t MULTIPLIER   =  2;
+const ssize_t FREE_PLACE   = -1;
 
 //RELATES TO CONSTRUCTION OF LIST
 //******************************************************************************************************************
@@ -21,15 +24,18 @@ int List_Constructor (struct List *const list_ptr)
     list_ptr->free = 0;
     list_ptr->linearized = true;
 
-    list_ptr->next = (int *)calloc (MIN_CAPACITY, sizeof (int));
+    list_ptr->next = (ssize_t *)calloc (MIN_CAPACITY, sizeof (ssize_t));
     MY_ASSERT (list_ptr->next, "list_ptr->next", NE_MEM, ERROR);
-    for (int i = 1; i < MIN_CAPACITY - 1; i++)
+
+    for (ssize_t i = 1; i < MIN_CAPACITY - 1; i++)
         list_ptr->next[i] = i + 1;
+
     list_ptr->next[MIN_CAPACITY - 1] = 0;
 
-    list_ptr->prev = (int *)calloc (MIN_CAPACITY, sizeof (int));
+    list_ptr->prev = (ssize_t *)calloc (MIN_CAPACITY, sizeof (ssize_t));
     MY_ASSERT (list_ptr->prev, "list_ptr->prev", NE_MEM, ERROR);
-    for (int i = 1; i < MIN_CAPACITY; i++)
+
+    for (ssize_t i = 1; i < MIN_CAPACITY; i++)
         list_ptr->prev[i] = FREE_PLACE;
 
     return NO_ERRORS;
@@ -43,35 +49,29 @@ int List_Destructor (struct List *const list_ptr)
     MY_ASSERT (list_ptr,               "struct List *const list_ptr", NULL_PTR,    ERROR);
     MY_ASSERT (list_ptr->capacity > 0, "list_ptr->capacity",          UNINIT_LIST, ERROR);
 
-    Destruct_Pointer (list_ptr->data);
-    Destruct_Pointer (list_ptr->next);
-    Destruct_Pointer (list_ptr->prev);
+    list_ptr->capacity = 0;
+    list_ptr->size     = 0;
 
-    list_ptr->capacity = POISON;
-    list_ptr->size     = POISON;
+    list_ptr->tail = 0;
+    list_ptr->head = 0;
+    list_ptr->free = 0;
+    list_ptr->linearized = 0;
 
-    list_ptr->tail = POISON;
-    list_ptr->head = POISON;
-    list_ptr->free = POISON;
-    list_ptr->linearized = POISON;
+    free (list_ptr->data);
+    free (list_ptr->next);
+    free (list_ptr->prev);
 
     return NO_ERRORS;
-}
-
-void Destruct_Pointer (void *ptr)
-{
-    free (ptr);
-    ptr = (void *)DEAD_PTR;
 }
 //******************************************************************************************************************
 
 //RELATES TO INSERGTING ELEMENTS INTO LIST
 //******************************************************************************************************************
-int Insert_ (struct List *const list_ptr, const int position, const list_t elem, const int mode)
+int Insert_ (struct List *const list_ptr, const list_t elem, const ssize_t position, enum Location mode)
 {
     MY_ASSERT (list_ptr,                               "struct List *const list_ptr", NULL_PTR,    ERROR);
     MY_ASSERT (position >= 0 &&
-               position <= list_ptr->capacity,         "const int position",          INV_POS,     ERROR);
+               position <= list_ptr->capacity,         "const ssize_t position",      INV_POS,     ERROR);
     MY_ASSERT (list_ptr->prev[position] != FREE_PLACE, "list_ptr->prev[position]",    FREE_INSERT, ERROR);
 
     if (position != list_ptr->tail && mode != AFTER)
@@ -80,9 +80,25 @@ int Insert_ (struct List *const list_ptr, const int position, const list_t elem,
     if (list_ptr->free == 0 && list_ptr->size > 0)
         List_Resize_Up (list_ptr);
 
-    int *link = NULL, *reverse = NULL;
-    int *end_mark = NULL;
-    CHOOSE_MODE;
+    ssize_t *link = NULL, *reverse = NULL, *end_mark = NULL;
+    
+    switch (mode)
+    {
+        case AFTER:
+            link = list_ptr->next;
+            reverse = list_ptr->prev;
+            end_mark = &(list_ptr->tail);
+            break;
+    
+        case BEFORE:
+            link = list_ptr->prev;
+            reverse = list_ptr->next;
+            end_mark = &(list_ptr->head);
+            break;
+    
+        default:
+            MY_ASSERT (false, "None", UNDEF_BEH, ERROR);
+    }
 
     if (list_ptr->size == 0)
     {
@@ -121,13 +137,16 @@ int Insert_ (struct List *const list_ptr, const int position, const list_t elem,
 }
 
 #define Resize_Array_Up(ptr, type, value)                                       \
+do                                                                              \
 {                                                                               \
     ptr = (type *)realloc (ptr, list_ptr->capacity * sizeof (type));            \
     MY_ASSERT (ptr, #ptr, NE_MEM, ERROR);                                       \
                                                                                 \
     for (int i = list_ptr->capacity / MULTIPLIER; i < list_ptr->capacity; i++)  \
         ptr[i] = value;                                                         \
-}
+}                                                                               \
+while (0)
+
 int List_Resize_Up (struct List *const list_ptr)
 {
     MY_ASSERT (list_ptr,               "struct List *const list_ptr", NULL_PTR,    ERROR);
@@ -136,9 +155,11 @@ int List_Resize_Up (struct List *const list_ptr)
     list_ptr->capacity *=  MULTIPLIER;
 
     Resize_Array_Up (list_ptr->data, list_t, 0);
-    Resize_Array_Up (list_ptr->next, int, i + 1);
+    Resize_Array_Up (list_ptr->next, ssize_t, i + 1);
+
     list_ptr->next[list_ptr->capacity - 1] = 0;
-    Resize_Array_Up (list_ptr->prev, int, FREE_PLACE);
+
+    Resize_Array_Up (list_ptr->prev, ssize_t, FREE_PLACE);
 
     list_ptr->free = list_ptr->size + 1;
 
@@ -305,11 +326,11 @@ int List_Dump (const struct List list)
                          "{\n"
                          "\trankdir=LR;\n"
                          "\tnode [style=rounded];\n\n"
-                         "\thead [shape = record, label = \"HEAD | %d\"];\n\n"
-                         "\ttail [shape = record, label = \"TAIL | %d\"];\n\n"
-                         "\tfree [shape = record, label = \"FREE | %d\"];\n\n"
-                         "\tcapacity [shape = record, label = \"CAPACITY | %d\"];\n\n"
-                         "\tsize [shape = record, label = \"SIZE | %d\"];\n\n"
+                         "\thead [shape = record, label = \"HEAD | %zd\"];\n\n"
+                         "\ttail [shape = record, label = \"TAIL | %zd\"];\n\n"
+                         "\tfree [shape = record, label = \"FREE | %zd\"];\n\n"
+                         "\tcapacity [shape = record, label = \"CAPACITY | %zd\"];\n\n"
+                         "\tsize [shape = record, label = \"SIZE | %zd\"];\n\n"
                          "\tlinearized [shape = record, label = \"LINEARIZED | %s\"];\n\n"
                          "\tedge [color = white]\n"
                          "{\n"
@@ -321,38 +342,38 @@ int List_Dump (const struct List list)
                          "}\n",
                          list.head, list.tail, list.free, list.capacity, list.size, (list.linearized == true) ? "true" : "false");
 
-    int i = 0;
+    ssize_t i = 0;
 
     //Nodes
     Print_Node(yellow);
     for (i = 1; i < list.capacity; i++)
     {
         if (list.prev[i] == FREE_PLACE)
-            {Print_Node(gray);}
+            Print_Node(gray);
         else
-            {Print_Node(green);}
+            Print_Node(green);
     }
 
-    int last_free = 0;
+    ssize_t last_free = 0;
     for (i = list.free; i != list.capacity - 1; i = list.next[i])
     {
         if (last_free > 0)
-            fprintf (graph_file, "\tnode%d -> node%d [color = \"gray\", constraint = false];\n", last_free, i);
+            fprintf (graph_file, "\tnode%zd -> node%zd [color = \"gray\", constraint = false];\n", last_free, i);
         last_free = i;
     }
-    fprintf (graph_file, "\tnode%d -> node%d [color = \"gray\", constraint = false];\n", last_free, i);
+    fprintf (graph_file, "\tnode%zd -> node%zd [color = \"gray\", constraint = false];\n", last_free, i);
 
     //Supporting ages
     fprintf (graph_file, "{\n\tedge [color = white]\n");
     for (i = 0; i < list.capacity - 1; i++)
-        fprintf (graph_file, "\tnode%d -> node%d\n", i, i + 1);
+        fprintf (graph_file, "\tnode%zd -> node%zd\n", i, i + 1);
     fprintf (graph_file, "}\n");
 
     //Next arrows
     for (i = 0; i < list.capacity; i++)
     {
         if (list.next[i] > 0 && list.prev[i] != FREE_PLACE)
-            fprintf (graph_file, "\tnode%d: <next%d> -> node%d: <name%d> [color = \"blue\", constraint = false];\n",
+            fprintf (graph_file, "\tnode%zd: <next%zd> -> node%zd: <name%zd> [color = \"blue\", constraint = false];\n",
                      i, i, list.next[i], list.next[i]);
     }
 
@@ -361,9 +382,9 @@ int List_Dump (const struct List list)
     //Prev arrows
     for (i = 0; i < list.capacity; i++)
     {
-        int node_i = list.capacity - i - 1;
+        ssize_t node_i = list.capacity - i - 1;
         if (list.prev[node_i] > 0)
-            fprintf (graph_file, "\tnode%d: <prev%d> -> node%d: <name%d> [color = \"red\", constraint = false];\n",
+            fprintf (graph_file, "\tnode%zd: <prev%zd> -> node%zd: <name%zd> [color = \"red\", constraint = false];\n",
                      node_i, node_i, list.prev[node_i], list.prev[node_i]);
     }
 
