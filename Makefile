@@ -19,3 +19,6 @@ run:
 clean:
 	rm -rf *.o
 	rm List.out
+
+clean_log:
+	rm *.log
