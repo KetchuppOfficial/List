@@ -6,7 +6,7 @@ My list able to contain any basic numeric type of the language C you want. Befor
 There are some useful functions in the project. Firstly, I've developed a function called List_Dump (). It generates a graph that is a picture of the list. You can see it below. If you use this function, you should have programm Graphviz on your PC. Secondly, there is a function List_Linearisation (). It changes the order of elements in a way that the order starts being equal to the logical one. It means that every two elements that are logicaly neighbours lie in the memory in a row. Lastly, you can find the physical index of an element (the index in array) from its logical index by using function Logical_Num_To_Physical ().
   
 Picture 1: List which capacity is miniaml
-  <img src = "https://github.com/KetchuppOfficial/List/blob/main/Dump.png">
+  ![picture_1](https://github.com/KetchuppOfficial/List/blob/master/Dump.png)
 
 Picture 2: List which capacity has been resized
-  <img src = "https://github.com/KetchuppOfficial/List/blob/main/Dump%202.png">
+  ![picture_2](https://github.com/KetchuppOfficial/List/blob/master/Dump%202.png)
