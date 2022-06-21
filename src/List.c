@@ -408,7 +408,10 @@ while (0)
 
 int List_Dump (const struct List *list)
 {
+    system ("mkdir -p output");
+
     FILE *graph_file = Open_File (GRAPH_FILE, "wb");
+    MY_ASSERT (graph_file, "Open_File ()", EMPTY_FILE, ERROR);
 
     fprintf (graph_file, "digraph List\n"
                          "{\n"
@@ -450,10 +453,6 @@ int List_Dump (const struct List *list)
 
         last_free = i;
     }
-
-    #if 0
-    fprintf (graph_file, "\tnode%d -> node%d [color = \"gray\", constraint = false];\n", last_free, i);
-    #endif
 
     //Supporting ages
     fprintf (graph_file, "{\n\tedge [color = white]\n");
