@@ -323,7 +323,11 @@ int Verificator (const struct List *list)
             MY_ASSERT (false, "struct List list", UNEXP_VAL, ERROR);
 
         if (i != list->prev[list->next[i]])
+        {
+            printf ("i = %d\n", i);
             MY_ASSERT (false, "struct List list", UNEXP_VAL, ERROR);
+        }
+            
     }
 
     if (i == list->tail)
@@ -372,7 +376,7 @@ int Delete (struct List *list, const int position)
     if (position == list->tail)
         list->head = list->next[position];
     else
-        list->prev[last_next] = last_prev;
+        list->next[last_prev] = last_next;
 
     list->size--;
 

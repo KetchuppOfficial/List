@@ -19,15 +19,13 @@ int main (void)
     Delete (list, 4);
     #endif
 
-    #if 0
     if (Verificator (list) == ERROR)
     {
         List_Dump (list);
         return ERROR;
     }
 
-    List_Linearisation (list);
-    #endif
+    //List_Linearisation (list);
 
     List_Dump (list);
 
