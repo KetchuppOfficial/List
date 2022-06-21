@@ -408,7 +408,7 @@ while (0)
 
 int List_Dump (const struct List *list)
 {
-    system ("mkdir -p output");
+    system ("mkdir -p dump");
 
     FILE *graph_file = Open_File (GRAPH_FILE, "wb");
     MY_ASSERT (graph_file, "Open_File ()", EMPTY_FILE, ERROR);
