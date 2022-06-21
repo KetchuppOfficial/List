@@ -1,7 +1,12 @@
-*.log
-
+# Service files
+#~~~~~~~~~~~~~~~~~~~
 *.o
+*.d
+*.out
+*.log
+#~~~~~~~~~~~~~~~~~~~
 
-Graph.dot
-
-Poltorashka.jpg
+# Not for release
+#~~~~~~~~~~~~~~~~~~~
+dump/
+#~~~~~~~~~~~~~~~~~~~
